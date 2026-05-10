@@ -33,6 +33,8 @@ local Flags = {
 -- GUI
 --=========================================
 
+local Open = true
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "VDT_V1"
 ScreenGui.ResetOnSpawn = false
@@ -45,6 +47,31 @@ if not ScreenGui.Parent then
 	ScreenGui.Parent = LocalPlayer.PlayerGui
 end
 
+-- OPEN BUTTON
+
+local OpenButton = Instance.new("TextButton")
+OpenButton.Size = UDim2.new(0,60,0,60)
+OpenButton.Position = UDim2.new(0,20,0.5,-30)
+OpenButton.BackgroundColor3 = Color3.fromRGB(15,15,15)
+OpenButton.Text = "VD"
+OpenButton.TextColor3 = Color3.fromRGB(255,255,255)
+OpenButton.Font = Enum.Font.Code
+OpenButton.TextSize = 24
+OpenButton.Active = true
+OpenButton.Draggable = true
+OpenButton.Parent = ScreenGui
+
+local OpenCorner = Instance.new("UICorner")
+OpenCorner.CornerRadius = UDim.new(1,0)
+OpenCorner.Parent = OpenButton
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(120,70,255)
+Stroke.Thickness = 2
+Stroke.Parent = OpenButton
+
+-- MAIN UI
+
 local Main = Instance.new("Frame")
 Main.Size = UDim2.new(0, 650, 0, 380)
 Main.Position = UDim2.new(0.5,-325,0.5,-190)
@@ -52,6 +79,11 @@ Main.BackgroundColor3 = Color3.fromRGB(10,10,10)
 Main.Active = true
 Main.Draggable = true
 Main.Parent = ScreenGui
+
+OpenButton.MouseButton1Click:Connect(function()
+	Open = not Open
+	Main.Visible = Open
+end)
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0,14)
