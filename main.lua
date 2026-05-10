@@ -1,6 +1,6 @@
 -- =============================================
 -- VIOLENCE DISTRICT ESP + FULLBRIGHT
--- OPTIMIZED MOBILE VERSION
+-- UPDATED VERSION (BUG FIX + GLOW)
 -- =============================================
 
 local Players = game:GetService("Players")
@@ -18,9 +18,9 @@ ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 -- ICON
 local Icon = Instance.new("TextButton")
-Icon.Size = UDim2.new(0, 55, 0, 55)
-Icon.Position = UDim2.new(0, 15, 0.5, -25)
-Icon.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+Icon.Size = UDim2.new(0,55,0,55)
+Icon.Position = UDim2.new(0,15,0.5,-25)
+Icon.BackgroundColor3 = Color3.fromRGB(200,0,0)
 Icon.Text = "⚡"
 Icon.TextColor3 = Color3.new(1,1,1)
 Icon.TextScaled = true
@@ -31,10 +31,10 @@ Icon.Parent = ScreenGui
 
 Instance.new("UICorner", Icon).CornerRadius = UDim.new(1,0)
 
--- MAIN MENU
+-- MAIN UI
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 280, 0, 360)
-Main.Position = UDim2.new(0.5, -140, 0.5, -180)
+Main.Size = UDim2.new(0,280,0,360)
+Main.Position = UDim2.new(0.5,-140,0.5,-180)
 Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Main.Visible = false
 Main.Active = true
@@ -58,7 +58,7 @@ Icon.MouseButton1Click:Connect(function()
 	Main.Visible = not Main.Visible
 end)
 
--- ================= TOGGLE SYSTEM =================
+-- ================= TOGGLES =================
 local toggles = {
 	["ESP Killer"] = true,
 	["ESP Survivor"] = true,
@@ -122,6 +122,7 @@ CreateToggle("Fullbright", 260)
 
 -- ================= ESP =================
 local ESP_CACHE = {}
+local HIGHLIGHT_CACHE = {}
 local GENERATORS = {}
 
 local function RemoveESP(obj)
@@ -132,11 +133,20 @@ local function RemoveESP(obj)
 	end
 end
 
+local function RemoveHighlight(character)
+
+	if HIGHLIGHT_CACHE[character] then
+		HIGHLIGHT_CACHE[character]:Destroy()
+		HIGHLIGHT_CACHE[character] = nil
+	end
+end
+
 local function CreateESP(part, text, color)
 
 	if not part then return end
 
 	if ESP_CACHE[part] then
+
 		local label = ESP_CACHE[part]:FindFirstChildOfClass("TextLabel")
 
 		if label then
@@ -168,7 +178,44 @@ local function CreateESP(part, text, color)
 	ESP_CACHE[part] = Billboard
 end
 
--- ================= FIND GENERATORS =================
+local function CreateHighlight(character, color)
+
+	if HIGHLIGHT_CACHE[character] then
+
+		HIGHLIGHT_CACHE[character].FillColor = color
+		HIGHLIGHT_CACHE[character].OutlineColor = color
+		return
+	end
+
+	local hl = Instance.new("Highlight")
+	hl.Name = "VD_HIGHLIGHT"
+	hl.FillColor = color
+	hl.OutlineColor = color
+	hl.FillTransparency = 0.5
+	hl.OutlineTransparency = 0
+	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	hl.Parent = character
+
+	HIGHLIGHT_CACHE[character] = hl
+end
+
+local function ClearGeneratorESP()
+
+	for obj, esp in pairs(ESP_CACHE) do
+
+		if obj and obj.Parent then
+
+			if obj.Parent.Name:lower():find("generator")
+				or obj.Parent:FindFirstChild("RepairPart") then
+
+				esp:Destroy()
+				ESP_CACHE[obj] = nil
+			end
+		end
+	end
+end
+
+-- ================= GENERATOR SCAN =================
 local function ScanGenerators()
 
 	table.clear(GENERATORS)
@@ -193,7 +240,7 @@ task.spawn(function()
 	end
 end)
 
--- ================= SAVE ORIGINAL LIGHTING =================
+-- ================= FULLBRIGHT =================
 local oldBrightness = Lighting.Brightness
 local oldClockTime = Lighting.ClockTime
 local oldFogEnd = Lighting.FogEnd
@@ -227,10 +274,21 @@ RunService.RenderStepped:Connect(function()
 
 			if root then
 
-				local isKiller =
-					plr.Character:FindFirstChild("KillerTool")
-					or plr.Backpack:FindFirstChild("KillerTool")
+				local isKiller = false
 
+				for _, tool in pairs(plr.Backpack:GetChildren()) do
+					if tool:IsA("Tool") then
+						isKiller = true
+					end
+				end
+
+				for _, tool in pairs(plr.Character:GetChildren()) do
+					if tool:IsA("Tool") then
+						isKiller = true
+					end
+				end
+
+				-- KILLER
 				if isKiller and toggles["ESP Killer"] then
 
 					CreateESP(
@@ -239,6 +297,12 @@ RunService.RenderStepped:Connect(function()
 						Color3.fromRGB(255,0,0)
 					)
 
+					CreateHighlight(
+						plr.Character,
+						Color3.fromRGB(255,0,0)
+					)
+
+				-- SURVIVOR
 				elseif (not isKiller) and toggles["ESP Survivor"] then
 
 					CreateESP(
@@ -247,8 +311,14 @@ RunService.RenderStepped:Connect(function()
 						Color3.fromRGB(0,170,255)
 					)
 
+					CreateHighlight(
+						plr.Character,
+						Color3.fromRGB(0,170,255)
+					)
+
 				else
 					RemoveESP(root)
+					RemoveHighlight(plr.Character)
 				end
 			end
 		end
@@ -293,7 +363,10 @@ RunService.RenderStepped:Connect(function()
 				CreateESP(root, text, color)
 			end
 		end
+
+	else
+		ClearGeneratorESP()
 	end
 end)
 
-print("✅ Violence District ESP + Fullbright Loaded")
+print("✅ UPDATED ESP + FULLBRIGHT LOADED")
