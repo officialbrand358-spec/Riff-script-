@@ -1,6 +1,6 @@
 -- =============================================
 -- VIOLENCE DISTRICT ESP + FULLBRIGHT
--- UPDATED VERSION (BUG FIX + GLOW)
+-- FIXED VERSION (KILLER + GLOW + GENERATOR)
 -- =============================================
 
 local Players = game:GetService("Players")
@@ -11,12 +11,14 @@ local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 
 -- ================= GUI =================
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "VD_ESP_MOBILE"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 -- ICON
+
 local Icon = Instance.new("TextButton")
 Icon.Size = UDim2.new(0,55,0,55)
 Icon.Position = UDim2.new(0,15,0.5,-25)
@@ -32,6 +34,7 @@ Icon.Parent = ScreenGui
 Instance.new("UICorner", Icon).CornerRadius = UDim.new(1,0)
 
 -- MAIN UI
+
 local Main = Instance.new("Frame")
 Main.Size = UDim2.new(0,280,0,360)
 Main.Position = UDim2.new(0.5,-140,0.5,-180)
@@ -59,6 +62,7 @@ Icon.MouseButton1Click:Connect(function()
 end)
 
 -- ================= TOGGLES =================
+
 local toggles = {
 	["ESP Killer"] = true,
 	["ESP Survivor"] = true,
@@ -121,6 +125,7 @@ CreateToggle("Generator Progress", 210)
 CreateToggle("Fullbright", 260)
 
 -- ================= ESP =================
+
 local ESP_CACHE = {}
 local HIGHLIGHT_CACHE = {}
 local GENERATORS = {}
@@ -133,11 +138,11 @@ local function RemoveESP(obj)
 	end
 end
 
-local function RemoveHighlight(character)
+local function RemoveHighlight(obj)
 
-	if HIGHLIGHT_CACHE[character] then
-		HIGHLIGHT_CACHE[character]:Destroy()
-		HIGHLIGHT_CACHE[character] = nil
+	if HIGHLIGHT_CACHE[obj] then
+		HIGHLIGHT_CACHE[obj]:Destroy()
+		HIGHLIGHT_CACHE[obj] = nil
 	end
 end
 
@@ -178,12 +183,12 @@ local function CreateESP(part, text, color)
 	ESP_CACHE[part] = Billboard
 end
 
-local function CreateHighlight(character, color)
+local function CreateHighlight(obj, color)
 
-	if HIGHLIGHT_CACHE[character] then
+	if HIGHLIGHT_CACHE[obj] then
 
-		HIGHLIGHT_CACHE[character].FillColor = color
-		HIGHLIGHT_CACHE[character].OutlineColor = color
+		HIGHLIGHT_CACHE[obj].FillColor = color
+		HIGHLIGHT_CACHE[obj].OutlineColor = color
 		return
 	end
 
@@ -194,9 +199,9 @@ local function CreateHighlight(character, color)
 	hl.FillTransparency = 0.5
 	hl.OutlineTransparency = 0
 	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-	hl.Parent = character
+	hl.Parent = obj
 
-	HIGHLIGHT_CACHE[character] = hl
+	HIGHLIGHT_CACHE[obj] = hl
 end
 
 local function ClearGeneratorESP()
@@ -216,6 +221,7 @@ local function ClearGeneratorESP()
 end
 
 -- ================= GENERATOR SCAN =================
+
 local function ScanGenerators()
 
 	table.clear(GENERATORS)
@@ -241,15 +247,18 @@ task.spawn(function()
 end)
 
 -- ================= FULLBRIGHT =================
+
 local oldBrightness = Lighting.Brightness
 local oldClockTime = Lighting.ClockTime
 local oldFogEnd = Lighting.FogEnd
 local oldAmbient = Lighting.Ambient
 
 -- ================= MAIN LOOP =================
+
 RunService.RenderStepped:Connect(function()
 
 	-- FULLBRIGHT
+
 	if toggles["Fullbright"] then
 
 		Lighting.Brightness = 5
@@ -266,6 +275,7 @@ RunService.RenderStepped:Connect(function()
 	end
 
 	-- PLAYER ESP
+
 	for _, plr in ipairs(Players:GetPlayers()) do
 
 		if plr ~= LocalPlayer and plr.Character then
@@ -277,18 +287,43 @@ RunService.RenderStepped:Connect(function()
 				local isKiller = false
 
 				for _, tool in pairs(plr.Backpack:GetChildren()) do
+
 					if tool:IsA("Tool") then
-						isKiller = true
+
+						local lowerName = tool.Name:lower()
+
+						if lowerName:find("knife")
+							or lowerName:find("bat")
+							or lowerName:find("sword")
+							or lowerName:find("spear")
+							or lowerName:find("machete")
+							or lowerName:find("baseball") then
+
+							isKiller = true
+						end
 					end
 				end
 
 				for _, tool in pairs(plr.Character:GetChildren()) do
+
 					if tool:IsA("Tool") then
-						isKiller = true
+
+						local lowerName = tool.Name:lower()
+
+						if lowerName:find("knife")
+							or lowerName:find("bat")
+							or lowerName:find("sword")
+							or lowerName:find("spear")
+							or lowerName:find("machete")
+							or lowerName:find("baseball") then
+
+							isKiller = true
+						end
 					end
 				end
 
 				-- KILLER
+
 				if isKiller and toggles["ESP Killer"] then
 
 					CreateESP(
@@ -303,6 +338,7 @@ RunService.RenderStepped:Connect(function()
 					)
 
 				-- SURVIVOR
+
 				elseif (not isKiller) and toggles["ESP Survivor"] then
 
 					CreateESP(
@@ -317,6 +353,7 @@ RunService.RenderStepped:Connect(function()
 					)
 
 				else
+
 					RemoveESP(root)
 					RemoveHighlight(plr.Character)
 				end
@@ -325,6 +362,7 @@ RunService.RenderStepped:Connect(function()
 	end
 
 	-- GENERATOR ESP
+
 	if toggles["ESP Generator"] then
 
 		for _, gen in ipairs(GENERATORS) do
@@ -361,12 +399,18 @@ RunService.RenderStepped:Connect(function()
 				end
 
 				CreateESP(root, text, color)
+				CreateHighlight(gen, color)
 			end
 		end
 
 	else
+
 		ClearGeneratorESP()
+
+		for _, gen in ipairs(GENERATORS) do
+			RemoveHighlight(gen)
+		end
 	end
 end)
 
-print("✅ UPDATED ESP + FULLBRIGHT LOADED")
+print("✅ FIXED ESP + FULLBRIGHT LOADED")
